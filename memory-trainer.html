@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Memory Trainer</title>
+<style>
+  :root{
+    --bg:#11131a; --panel:#1a1d26; --panel2:#222633; --line:#2e3342;
+    --ink:#e8eaf0; --dim:#9aa1b4; --acc:#5b8cff; --good:#3fb950; --bad:#f0574d; --warn:#e3a008;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif}
+  a{color:var(--acc)}
+  header{display:flex;align-items:center;gap:18px;padding:14px 20px;border-bottom:1px solid var(--line);
+    position:sticky;top:0;background:var(--bg);z-index:5;flex-wrap:wrap}
+  header h1{font-size:16px;margin:0;font-weight:700;letter-spacing:.02em}
+  nav{display:flex;gap:4px;flex-wrap:wrap}
+  nav button{background:none;border:none;color:var(--dim);padding:7px 13px;border-radius:8px;
+    font-size:14px;font-weight:600;cursor:pointer}
+  nav button:hover{background:var(--panel2);color:var(--ink)}
+  nav button.on{background:var(--acc);color:#fff}
+  .spacer{flex:1}
+  main{max-width:1060px;margin:0 auto;padding:22px 18px 70px}
+  section{display:none} section.on{display:block}
+  h2{font-size:20px;margin:0 0 6px} .sub{color:var(--dim);margin:0 0 20px;font-size:14px;max-width:70ch}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:14px}
+  .btn{background:var(--panel2);border:1px solid var(--line);color:var(--ink);padding:9px 16px;
+    border-radius:9px;font-size:14px;font-weight:600;cursor:pointer}
+  .btn:hover{border-color:var(--acc)}
+  .btn.p{background:var(--acc);border-color:var(--acc);color:#fff}
+  .btn.g{background:var(--good);border-color:var(--good);color:#fff}
+  .btn.r{background:var(--bad);border-color:var(--bad);color:#fff}
+  .btn:disabled{opacity:.4;cursor:default}
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  input,select,textarea{background:var(--panel2);border:1px solid var(--line);color:var(--ink);
+    padding:8px 10px;border-radius:8px;font:inherit}
+  input:focus,textarea:focus{outline:none;border-color:var(--acc)}
+  .muted{color:var(--dim);font-size:13px}
+  .pill{background:var(--panel2);border-radius:20px;padding:3px 11px;font-size:12px;color:var(--dim)}
+
+  /* ---- system table ---- */
+  table{width:100%;border-collapse:collapse}
+  th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);font-size:14px}
+  th{color:var(--dim);font-size:12px;text-transform:uppercase;letter-spacing:.06em;font-weight:600}
+  td.c{width:62px;font-weight:700;font-size:17px;white-space:nowrap}
+  td.i{width:52px;color:var(--acc);font-weight:700;font-family:ui-monospace,monospace}
+  td input{width:100%;border-color:transparent;background:transparent;padding:5px 6px}
+  td input:hover{background:var(--panel2)}
+  .red{color:#ff6b6b}
+  .suitgrp{margin-bottom:18px}
+  .suitgrp h3{font-size:15px;margin:0 0 6px;display:flex;align-items:center;gap:8px}
+  .bar{height:6px;background:var(--panel2);border-radius:4px;overflow:hidden;margin:6px 0 2px}
+  .bar i{display:block;height:100%;background:var(--good)}
+
+  /* ---- drill ---- */
+  .bigcard{background:#fff;color:#111;border-radius:14px;width:150px;height:210px;display:flex;
+    flex-direction:column;align-items:center;justify-content:center;margin:0 auto;
+    font-weight:800;box-shadow:0 8px 30px rgba(0,0,0,.45)}
+  .bigcard .r{font-size:54px;line-height:1}
+  .bigcard .s{font-size:44px;line-height:1.1}
+  .bigcard.redsuit{color:#c0252b}
+  .reveal{text-align:center;margin:18px 0;min-height:76px}
+  .reveal .who{font-size:27px;font-weight:800}
+  .reveal .act{font-size:17px;color:var(--dim)}
+  .reveal .init{font-family:ui-monospace,monospace;color:var(--acc);font-weight:700}
+  .stat{display:flex;gap:22px;flex-wrap:wrap;justify-content:center;margin-top:8px}
+  .stat div{text-align:center}
+  .stat b{display:block;font-size:23px}
+  .stat span{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.06em}
+
+  /* ---- palace ---- */
+  ol.loci{padding-left:0;list-style:none;margin:0}
+  ol.loci li{display:flex;gap:10px;align-items:center;padding:5px 0;border-bottom:1px solid var(--line)}
+  ol.loci li .n{width:30px;color:var(--dim);font-family:ui-monospace,monospace;font-size:13px}
+  ol.loci li input{flex:1;border-color:transparent;background:transparent}
+  ol.loci li input:hover{background:var(--panel2)}
+  ol.loci li .x{background:none;border:none;color:var(--dim);cursor:pointer;font-size:17px;padding:0 6px}
+  ol.loci li .x:hover{color:var(--bad)}
+
+  /* ---- deck run ---- */
+  .deckgrid{display:grid;grid-template-columns:repeat(13,1fr);gap:4px;margin-top:10px}
+  .mini{background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:7px 2px;
+    text-align:center;font-size:13px;font-weight:700;cursor:pointer;position:relative;user-select:none}
+  .mini:hover{border-color:var(--acc)}
+  .mini.red{color:#ff8a8a}
+  .mini.used{opacity:.26;cursor:default}
+  .mini .ord{position:absolute;top:-5px;right:-4px;background:var(--acc);color:#fff;border-radius:9px;
+    font-size:9px;padding:1px 4px;font-weight:700}
+  .seq{display:flex;gap:5px;flex-wrap:wrap;margin-top:10px;min-height:30px}
+  .seq .s{background:var(--panel2);border-radius:6px;padding:4px 8px;font-size:13px;font-weight:700}
+  .seq .s.red{color:#ff8a8a}
+  .seq .s.ok{background:#17391f;color:#8fe39b}
+  .seq .s.no{background:#3d1b19;color:#ff9a92}
+  .timer{font-family:ui-monospace,monospace;font-size:30px;font-weight:700}
+  .phasebox{text-align:center;padding:10px 0}
+
+  /* ---- progress ---- */
+  .chart{display:flex;align-items:flex-end;gap:5px;height:140px;margin-top:10px}
+  .chart .b{flex:1;background:var(--acc);border-radius:3px 3px 0 0;min-height:2px;position:relative}
+  .chart .b.part{background:var(--warn)} .chart .b.low{background:var(--bad)}
+  .hist{width:100%;font-size:13px}
+  .stage{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--line)}
+  .stage .tick{width:22px;font-size:16px}
+  .stage.done{opacity:.55}
+  .stage b{display:block}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Memory Trainer</h1>
+  <nav id="nav"></nav>
+  <div class="spacer"></div>
+  <span class="pill" id="hdrstat"></span>
+  <button class="btn" id="dataBtn">Data</button>
+</header>
+
+<main>
+
+<!-- ================= SYSTEM ================= -->
+<section id="s-system">
+  <h2>1. Your card system</h2>
+  <p class="sub">Each card becomes a <b>person</b>. The two initials are generated for you using the
+  Dominic System: the rank gives the first letter, the suit gives the second. 4&hearts; is DH, so you
+  might pick Dwayne Johnson... no, D.H. &mdash; David Hasselhoff. Pick people you can see clearly.
+  Add an <b>action</b> for each later; you only need actions once you start pairing two cards per locus.</p>
+
+  <div class="card">
+    <div class="row">
+      <div style="flex:1;min-width:220px">
+        <div class="muted">People filled in</div>
+        <div class="bar"><i id="fillBar" style="width:0%"></i></div>
+        <div class="muted"><span id="fillTxt">0 of 52</span></div>
+      </div>
+      <button class="btn" id="suggest">Fill blanks with placeholders</button>
+    </div>
+  </div>
+
+  <div id="sysTables"></div>
+</section>
+
+<!-- ================= DRILL ================= -->
+<section id="s-drill">
+  <h2>2. Image drill</h2>
+  <p class="sub">The fastest route to a quick deck is instant card-to-person recall, with no palace
+  involved. See the card, say the person out loud, then reveal. Be honest about misses: the app
+  feeds your weak and slow cards back to you more often.</p>
+
+  <div class="card" id="drillBox">
+    <div class="phasebox" id="drillEmpty">
+      <p class="muted">Fill in at least 5 people on the System tab to start drilling.</p>
+    </div>
+    <div id="drillRun" style="display:none">
+      <div class="bigcard" id="dCard"><div class="r">A</div><div class="s">&spades;</div></div>
+      <div class="reveal" id="dReveal"></div>
+      <div class="row" style="justify-content:center">
+        <button class="btn p" id="dShow">Reveal</button>
+        <button class="btn g" id="dHit" style="display:none">Got it</button>
+        <button class="btn r" id="dMiss" style="display:none">Missed</button>
+      </div>
+      <div class="stat">
+        <div><b id="dSeen">0</b><span>this session</span></div>
+        <div><b id="dAcc">&mdash;</b><span>accuracy</span></div>
+        <div><b id="dTime">&mdash;</b><span>avg seconds</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3 style="margin:0 0 4px;font-size:15px">Your slowest and weakest cards</h3>
+    <p class="muted" style="margin:0 0 8px">These are what cap your deck time. Drill these by hand too.</p>
+    <div id="weakList" class="muted">No attempts recorded yet.</div>
+  </div>
+</section>
+
+<!-- ================= PALACE ================= -->
+<section id="s-palace">
+  <h2>3. Your palace route</h2>
+  <p class="sub">Write out your route in order, one locus per line. Use distinct objects, not whole
+  rooms, about 5 per room, moving in a consistent direction. For one card per locus you need 52;
+  for two cards per locus, 26. The deck runs will report which locus numbers you keep dropping.</p>
+
+  <div class="card">
+    <div class="row">
+      <span class="pill" id="lociCount">0 loci</span>
+      <span class="muted" id="lociCap"></span>
+      <div class="spacer"></div>
+      <button class="btn" id="addLocus">Add locus</button>
+      <button class="btn" id="add5">Add 5</button>
+    </div>
+  </div>
+  <div class="card"><ol class="loci" id="lociList"></ol></div>
+</section>
+
+<!-- ================= DECK RUN ================= -->
+<section id="s-run">
+  <h2>4. Timed deck run</h2>
+  <p class="sub">Start at 10 cards and build up. Accuracy first, speed later. Advance the cards
+  yourself so the clock reflects real encoding time.</p>
+
+  <div class="card" id="runSetup">
+    <div class="row">
+      <label class="muted">Cards</label>
+      <select id="runN">
+        <option>10</option><option>13</option><option>20</option><option>26</option><option selected>52</option>
+      </select>
+      <label class="muted">Advance</label>
+      <select id="runMode">
+        <option value="manual" selected>When I tap</option>
+        <option value="2">Auto, 2s each</option>
+        <option value="3">Auto, 3s each</option>
+        <option value="5">Auto, 5s each</option>
+      </select>
+      <button class="btn p" id="runStart">Start run</button>
+    </div>
+  </div>
+
+  <div class="card" id="runMem" style="display:none">
+    <div class="row" style="justify-content:space-between">
+      <span class="pill" id="memPos"></span>
+      <span class="timer" id="memClock">0.0</span>
+    </div>
+    <div style="margin:16px 0">
+      <div class="bigcard" id="memCard"></div>
+    </div>
+    <div class="reveal" id="memHint"></div>
+    <div class="row" style="justify-content:center">
+      <button class="btn p" id="memNext">Next card</button>
+      <button class="btn" id="memDone">Done, start recall</button>
+    </div>
+  </div>
+
+  <div class="card" id="runRecall" style="display:none">
+    <div class="row" style="justify-content:space-between">
+      <div><b>Recall</b> <span class="muted" id="recPos"></span></div>
+      <div class="row">
+        <button class="btn" id="recUndo">Undo</button>
+        <button class="btn p" id="recScore">Score it</button>
+      </div>
+    </div>
+    <div class="seq" id="recSeq"></div>
+    <div class="deckgrid" id="recGrid"></div>
+  </div>
+
+  <div class="card" id="runResult" style="display:none"></div>
+</section>
+
+<!-- ================= PROGRESS ================= -->
+<section id="s-progress">
+  <h2>Progress</h2>
+  <p class="sub">Accuracy per run, most recent on the right. Green is a clean run, amber is partial,
+  red is under half.</p>
+  <div class="card">
+    <div class="chart" id="chart"></div>
+    <div class="muted" id="chartNote" style="margin-top:8px">No runs yet.</div>
+  </div>
+  <div class="card">
+    <h3 style="margin:0 0 8px;font-size:15px">Run history</h3>
+    <div id="histWrap" class="muted">Nothing logged yet.</div>
+  </div>
+  <div class="card">
+    <h3 style="margin:0 0 4px;font-size:15px">Where you are</h3>
+    <p class="muted" style="margin:0 0 10px">Stages from the training framework. Ticked off automatically.</p>
+    <div id="stages"></div>
+  </div>
+</section>
+
+<!-- ================= DATA ================= -->
+<section id="s-data">
+  <h2>Data</h2>
+  <p class="sub">Everything lives in this browser only. Copy this out somewhere safe once your
+  system is filled in, because clearing site data will wipe it.</p>
+  <div class="card">
+    <div class="row" style="margin-bottom:10px">
+      <button class="btn" id="expBtn">Copy to box</button>
+      <button class="btn" id="impBtn">Load from box</button>
+      <div class="spacer"></div>
+      <button class="btn r" id="wipeBtn">Erase everything</button>
+    </div>
+    <textarea id="dataBox" rows="10" style="width:100%" placeholder="JSON appears here"></textarea>
+  </div>
+</section>
+
+</main>
+
+<script>
+/* ============================ data model ============================ */
+const RANKS = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+const RANK_LETTER = {A:'A','2':'B','3':'C','4':'D','5':'E','6':'S','7':'G','8':'H','9':'N','10':'O',J:'J',Q:'Q',K:'K'};
+const SUITS = [
+  {k:'S',name:'Spades',   sym:'\u2660', red:false},
+  {k:'H',name:'Hearts',   sym:'\u2665', red:true },
+  {k:'D',name:'Diamonds', sym:'\u2666', red:true },
+  {k:'C',name:'Clubs',    sym:'\u2663', red:false}
+];
+const DECK = [];
+SUITS.forEach(s => RANKS.forEach(r => DECK.push({
+  id: r + s.k, rank: r, suit: s.k, sym: s.sym, red: s.red,
+  init: RANK_LETTER[r] + s.k
+})));
+const byId = {}; DECK.forEach(c => byId[c.id] = c);
+
+const KEY = 'memtrainer.v1';
+let D = load();
+
+function blank(){
+  const sys = {};
+  DECK.forEach(c => sys[c.id] = {person:'', action:'', hits:0, misses:0, ms:[]});
+  return { sys, loci:[], runs:[] };
+}
+function load(){
+  try {
+    const raw = localStorage.getItem(KEY);
+    if (!raw) return blank();
+    const d = JSON.parse(raw), b = blank();
+    DECK.forEach(c => { if (d.sys && d.sys[c.id]) Object.assign(b.sys[c.id], d.sys[c.id]); });
+    b.loci = d.loci || []; b.runs = d.runs || [];
+    return b;
+  } catch(e){ return blank(); }
+}
+function save(){ localStorage.setItem(KEY, JSON.stringify(D)); }
+
+const $ = s => document.querySelector(s);
+const el = (t,c,h) => { const n=document.createElement(t); if(c)n.className=c; if(h!=null)n.innerHTML=h; return n; };
+const filled = () => DECK.filter(c => D.sys[c.id].person.trim()).length;
+const avgMs = c => { const a=D.sys[c.id].ms; return a.length ? a.reduce((x,y)=>x+y,0)/a.length : null; };
+
+/* ============================ tabs ============================ */
+const TABS = [['system','System'],['drill','Drill'],['palace','Palace'],['run','Deck run'],['progress','Progress']];
+TABS.forEach(([k,label]) => {
+  const b = el('button', '', label);
+  b.onclick = () => show(k);
+  b.dataset.k = k;
+  $('#nav').appendChild(b);
+});
+function show(k){
+  document.querySelectorAll('section').forEach(s => s.classList.remove('on'));
+  const s = $('#s-'+k); if (s) s.classList.add('on');
+  document.querySelectorAll('nav button').forEach(b => b.classList.toggle('on', b.dataset.k===k));
+  if (k==='drill') startDrill();
+  if (k==='progress') renderProgress();
+}
+$('#dataBtn').onclick = () => {
+  document.querySelectorAll('section').forEach(s => s.classList.remove('on'));
+  $('#s-data').classList.add('on');
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('on'));
+};
+
+/* ============================ system tab ============================ */
+function renderSystem(){
+  const wrap = $('#sysTables'); wrap.innerHTML = '';
+  SUITS.forEach(s => {
+    const g = el('div','suitgrp');
+    g.appendChild(el('h3','', `<span style="color:${s.red?'#ff8a8a':'#cfd4e2'}">${s.sym}</span> ${s.name}`));
+    const t = el('table','');
+    t.appendChild(el('thead','','<tr><th>Card</th><th>Init</th><th>Person</th><th>Action</th></tr>'));
+    const tb = el('tbody');
+    DECK.filter(c => c.suit===s.k).forEach(c => {
+      const tr = el('tr');
+      tr.appendChild(el('td','c' + (c.red?' red':''), c.rank + ' ' + c.sym));
+      tr.appendChild(el('td','i', c.init));
+      ['person','action'].forEach(f => {
+        const td = el('td'); const inp = document.createElement('input');
+        inp.value = D.sys[c.id][f];
+        inp.placeholder = f==='person' ? '' : 'optional';
+        inp.oninput = () => { D.sys[c.id][f] = inp.value; save(); refreshFill(); };
+        td.appendChild(inp); tr.appendChild(td);
+      });
+      tb.appendChild(tr);
+    });
+    t.appendChild(tb); g.appendChild(t); wrap.appendChild(g);
+  });
+  refreshFill();
+}
+function refreshFill(){
+  const n = filled(), pct = Math.round(n/52*100);
+  $('#fillBar').style.width = pct + '%';
+  $('#fillTxt').textContent = `${n} of 52`;
+  $('#hdrstat').textContent = `${n}/52 system \u00b7 ${D.loci.length} loci`;
+}
+$('#suggest').onclick = () => {
+  if (!confirm('Put the initials in as a placeholder for every blank person? You can overwrite them any time.')) return;
+  DECK.forEach(c => { if (!D.sys[c.id].person.trim()) D.sys[c.id].person = c.init + ' \u2014 ?'; });
+  save(); renderSystem();
+};
+
+/* ============================ drill ============================ */
+let dCur = null, dShownAt = 0;
+function pickCard(){
+  const pool = DECK.filter(c => D.sys[c.id].person.trim());
+  if (pool.length < 5) return null;
+  const weighted = [];
+  pool.forEach(c => {
+    const s = D.sys[c.id];
+    let w = 1 + s.misses*3;
+    if (s.hits + s.misses === 0) w += 4;
+    const a = avgMs(c);
+    if (a && a > 4000) w += 2;
+    if (dCur && c.id === dCur.id) w = 0.1;
+    for (let i=0;i<Math.max(1,Math.round(w));i++) weighted.push(c);
+  });
+  return weighted[Math.floor(Math.random()*weighted.length)];
+}
+let dSeen=0, dHits=0, dTimes=[];
+function startDrill(){
+  const ok = DECK.filter(c => D.sys[c.id].person.trim()).length >= 5;
+  $('#drillEmpty').style.display = ok ? 'none' : 'block';
+  $('#drillRun').style.display  = ok ? 'block' : 'none';
+  renderWeak();
+  if (ok && !dCur) nextDrill();
+}
+function nextDrill(){
+  dCur = pickCard(); if (!dCur) return;
+  const bc = $('#dCard');
+  bc.className = 'bigcard' + (dCur.red ? ' redsuit' : '');
+  bc.innerHTML = `<div class="r">${dCur.rank}</div><div class="s">${dCur.sym}</div>`;
+  $('#dReveal').innerHTML = '';
+  $('#dShow').style.display='inline-block';
+  $('#dHit').style.display='none'; $('#dMiss').style.display='none';
+  dShownAt = performance.now();
+}
+$('#dShow').onclick = () => {
+  const s = D.sys[dCur.id], ms = performance.now() - dShownAt;
+  dCur._ms = ms;
+  $('#dReveal').innerHTML =
+    `<div class="who">${s.person||'&mdash;'}</div>` +
+    (s.action ? `<div class="act">${s.action}</div>` : '') +
+    `<div class="act"><span class="init">${dCur.init}</span> &middot; ${(ms/1000).toFixed(1)}s</div>`;
+  $('#dShow').style.display='none';
+  $('#dHit').style.display='inline-block'; $('#dMiss').style.display='inline-block';
+};
+function mark(ok){
+  const s = D.sys[dCur.id];
+  if (ok) s.hits++; else s.misses++;
+  s.ms.push(dCur._ms); if (s.ms.length > 12) s.ms.shift();
+  dSeen++; if (ok) dHits++; dTimes.push(dCur._ms);
+  $('#dSeen').textContent = dSeen;
+  $('#dAcc').textContent = Math.round(dHits/dSeen*100) + '%';
+  $('#dTime').textContent = (dTimes.reduce((a,b)=>a+b,0)/dTimes.length/1000).toFixed(1);
+  save(); renderWeak(); nextDrill();
+}
+$('#dHit').onclick = () => mark(true);
+$('#dMiss').onclick = () => mark(false);
+document.addEventListener('keydown', e => {
+  if (!$('#s-drill').classList.contains('on')) return;
+  if (e.code==='Space'){ e.preventDefault(); if($('#dShow').style.display!=='none') $('#dShow').click(); }
+  if (e.key==='1' && $('#dHit').style.display!=='none') $('#dHit').click();
+  if (e.key==='2' && $('#dMiss').style.display!=='none') $('#dMiss').click();
+});
+function renderWeak(){
+  const tried = DECK.filter(c => D.sys[c.id].hits + D.sys[c.id].misses > 0);
+  if (!tried.length){ $('#weakList').textContent='No attempts recorded yet.'; return; }
+  const scored = tried.map(c => {
+    const s = D.sys[c.id], n = s.hits+s.misses;
+    return { c, missRate: s.misses/n, a: avgMs(c)||0, n };
+  }).sort((x,y) => (y.missRate*8000 + y.a) - (x.missRate*8000 + x.a)).slice(0,10);
+  const t = el('table');
+  t.appendChild(el('thead','','<tr><th>Card</th><th>Person</th><th>Avg</th><th>Missed</th></tr>'));
+  const tb = el('tbody');
+  scored.forEach(x => tb.appendChild(el('tr','',
+    `<td class="c${x.c.red?' red':''}">${x.c.rank} ${x.c.sym}</td>` +
+    `<td>${D.sys[x.c.id].person||'&mdash;'}</td>` +
+    `<td>${(x.a/1000).toFixed(1)}s</td>` +
+    `<td>${Math.round(x.missRate*100)}% of ${x.n}</td>`)));
+  t.appendChild(tb);
+  $('#weakList').innerHTML=''; $('#weakList').appendChild(t);
+}
+
+/* ============================ palace ============================ */
+function renderLoci(){
+  const list = $('#lociList'); list.innerHTML='';
+  D.loci.forEach((v,i) => {
+    const li = el('li');
+    li.appendChild(el('span','n', String(i+1)));
+    const inp = document.createElement('input');
+    inp.value = v; inp.placeholder = 'e.g. front door mat';
+    inp.oninput = () => { D.loci[i]=inp.value; save(); };
+    li.appendChild(inp);
+    const x = el('button','x','\u00d7');
+    x.onclick = () => { D.loci.splice(i,1); save(); renderLoci(); };
+    li.appendChild(x);
+    list.appendChild(li);
+  });
+  $('#lociCount').textContent = D.loci.length + ' loci';
+  const n = D.loci.length;
+  $('#lociCap').textContent = n >= 52 ? 'enough for one card per locus'
+    : n >= 26 ? `enough for two cards per locus (${52-n} more for one each)`
+    : `${26-n} more for a two-card-per-locus deck`;
+  refreshFill();
+}
+$('#addLocus').onclick = () => { D.loci.push(''); save(); renderLoci(); };
+$('#add5').onclick = () => { for(let i=0;i<5;i++) D.loci.push(''); save(); renderLoci(); };
+
+/* ============================ deck run ============================ */
+let run = null, clockTimer=null, autoTimer=null;
+function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
+
+$('#runStart').onclick = () => {
+  const n = +$('#runN').value;
+  run = { cards: shuffle(DECK).slice(0,n), pos:0, t0:performance.now(), entered:[], mode:$('#runMode').value };
+  $('#runSetup').style.display='none'; $('#runResult').style.display='none';
+  $('#runMem').style.display='block';
+  clockTimer = setInterval(()=> $('#memClock').textContent = ((performance.now()-run.t0)/1000).toFixed(1), 100);
+  showMemCard();
+};
+function showMemCard(){
+  const c = run.cards[run.pos];
+  const bc = $('#memCard');
+  bc.className='bigcard'+(c.red?' redsuit':'');
+  bc.innerHTML = `<div class="r">${c.rank}</div><div class="s">${c.sym}</div>`;
+  $('#memPos').textContent = `card ${run.pos+1} of ${run.cards.length}`;
+  const s = D.sys[c.id];
+  const locus = D.loci[Math.floor(run.pos/2)] || '';
+  $('#memHint').innerHTML = s.person
+    ? `<div class="act"><span class="init">${c.init}</span> &middot; ${s.person}${locus?' &middot; locus '+(Math.floor(run.pos/2)+1)+': '+locus:''}</div>`
+    : `<div class="act">no person set for ${c.init}</div>`;
+  clearTimeout(autoTimer);
+  if (run.mode !== 'manual') autoTimer = setTimeout(()=> $('#memNext').click(), +run.mode*1000);
+}
+$('#memNext').onclick = () => {
+  run.pos++;
+  if (run.pos >= run.cards.length) { $('#memDone').click(); return; }
+  showMemCard();
+};
+$('#memDone').onclick = () => {
+  clearInterval(clockTimer); clearTimeout(autoTimer);
+  run.secs = (performance.now()-run.t0)/1000;
+  $('#runMem').style.display='none'; $('#runRecall').style.display='block';
+  renderRecall();
+};
+function renderRecall(){
+  const g = $('#recGrid'); g.innerHTML='';
+  const used = new Set(run.entered.map(c=>c.id));
+  SUITS.forEach(s => RANKS.forEach(r => {
+    const c = byId[r+s.k];
+    const d = el('div','mini'+(c.red?' red':'')+(used.has(c.id)?' used':''), c.rank+'<br>'+c.sym);
+    if (!used.has(c.id)) d.onclick = () => { run.entered.push(c); renderRecall(); };
+    g.appendChild(d);
+  }));
+  const sq = $('#recSeq'); sq.innerHTML='';
+  run.entered.forEach((c,i) => sq.appendChild(el('div','s'+(c.red?' red':''), `${i+1}. ${c.rank}${c.sym}`)));
+  $('#recPos').textContent = `${run.entered.length} of ${run.cards.length} entered`;
+}
+$('#recUndo').onclick = () => { run.entered.pop(); renderRecall(); };
+$('#recScore').onclick = () => {
+  const n = run.cards.length;
+  let correct = 0, firstErr = -1, rows = '';
+  for (let i=0;i<n;i++){
+    const want = run.cards[i], got = run.entered[i];
+    const ok = got && got.id === want.id;
+    if (ok) correct++; else if (firstErr<0) firstErr=i;
+    rows += `<div class="s ${ok?'ok':'no'}">${i+1}. ${want.rank}${want.sym}${ok?'':' &rarr; '+(got?got.rank+got.sym:'blank')}</div>`;
+  }
+  const pct = Math.round(correct/n*100);
+  D.runs.push({ at: Date.now(), n, secs: Math.round(run.secs*10)/10, correct });
+  save();
+  const perCard = (run.secs/n).toFixed(1);
+  $('#runRecall').style.display='none';
+  $('#runResult').style.display='block';
+  $('#runResult').innerHTML =
+    `<div class="stat" style="justify-content:flex-start">
+       <div><b style="color:${pct===100?'var(--good)':pct>=70?'var(--warn)':'var(--bad)'}">${pct}%</b><span>accuracy</span></div>
+       <div><b>${correct}/${n}</b><span>in position</span></div>
+       <div><b>${run.secs.toFixed(1)}s</b><span>memorise time</span></div>
+       <div><b>${perCard}s</b><span>per card</span></div>
+       <div><b>${firstErr<0?'\u2014':'#'+(firstErr+1)}</b><span>first slip</span></div>
+     </div>
+     ${firstErr>=0 && D.loci.length ? `<p class="muted">First slip was card ${firstErr+1}, which sits at locus ${Math.floor(firstErr/2)+1}${D.loci[Math.floor(firstErr/2)]?' ('+D.loci[Math.floor(firstErr/2)]+')':''}.</p>`:''}
+     <div class="seq" style="margin-top:14px">${rows}</div>
+     <div class="row" style="margin-top:16px"><button class="btn p" id="again">Another run</button></div>`;
+  $('#again').onclick = () => {
+    $('#runResult').style.display='none'; $('#runSetup').style.display='block';
+  };
+};
+
+/* ============================ progress ============================ */
+function renderProgress(){
+  const ch = $('#chart'); ch.innerHTML='';
+  const rs = D.runs.slice(-30);
+  if (!rs.length){ $('#chartNote').textContent='No runs yet.'; $('#histWrap').textContent='Nothing logged yet.'; renderStages(); return; }
+  rs.forEach(r => {
+    const pct = r.correct/r.n;
+    const b = el('div','b'+(pct===1?'':pct>=0.7?' part':' low'));
+    b.style.height = Math.max(2, pct*140)+'px';
+    b.title = `${new Date(r.at).toLocaleDateString()} \u00b7 ${r.correct}/${r.n} \u00b7 ${r.secs}s`;
+    ch.appendChild(b);
+  });
+  const best = D.runs.filter(r=>r.correct===r.n).sort((a,b)=>a.secs/a.n - b.secs/b.n)[0];
+  $('#chartNote').innerHTML = `${D.runs.length} runs logged. ` +
+    (best ? `Best clean run: ${best.n} cards in ${best.secs}s (${(best.secs/best.n).toFixed(1)}s per card).`
+          : 'No fully clean run yet.');
+  const t = el('table','hist');
+  t.appendChild(el('thead','','<tr><th>When</th><th>Cards</th><th>Score</th><th>Time</th><th>Per card</th></tr>'));
+  const tb = el('tbody');
+  D.runs.slice().reverse().slice(0,25).forEach(r => tb.appendChild(el('tr','',
+    `<td>${new Date(r.at).toLocaleString([], {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}</td>
+     <td>${r.n}</td><td>${r.correct}/${r.n}</td><td>${r.secs}s</td><td>${(r.secs/r.n).toFixed(1)}s</td>`)));
+  t.appendChild(tb);
+  $('#histWrap').innerHTML=''; $('#histWrap').appendChild(t);
+  renderStages();
+}
+function renderStages(){
+  const n52 = filled(), loci = D.loci.length;
+  const clean = D.runs.filter(r => r.correct === r.n);
+  const full  = clean.filter(r => r.n === 52);
+  const bestFull = full.sort((a,b)=>a.secs-b.secs)[0];
+  const st = [
+    ['Stage 0 \u00b7 Foundation', 'A palace route with at least 20 loci', loci>=20, `${loci} loci`],
+    ['Stage 1 \u00b7 System built', 'All 52 cards have a person', n52>=52, `${n52} of 52`],
+    ['Stage 1 \u00b7 System fluent', 'Drill average under 2s with 90%+ accuracy', drillFluent(), drillFluentTxt()],
+    ['Stage 2 \u00b7 First full deck', 'One clean 52-card run, any time', !!bestFull, bestFull?`${bestFull.secs}s`:'not yet'],
+    ['Stage 3a \u00b7 Intermediate', 'Clean 52-card run under 5 minutes', !!(bestFull&&bestFull.secs<300), bestFull?`best ${bestFull.secs}s`:'\u2014'],
+    ['Stage 3b \u00b7 Advanced', 'Clean 52-card run under 2 minutes', !!(bestFull&&bestFull.secs<120), bestFull?`best ${bestFull.secs}s`:'\u2014'],
+    ['Stage 4 \u00b7 Expert', 'Clean 52-card run under 60 seconds', !!(bestFull&&bestFull.secs<60), bestFull?`best ${bestFull.secs}s`:'\u2014']
+  ];
+  $('#stages').innerHTML = st.map(([a,b,done,note]) =>
+    `<div class="stage${done?' done':''}"><div class="tick">${done?'\u2705':'\u2b1c'}</div>
+     <div><b>${a}</b><span class="muted">${b} &middot; ${note}</span></div></div>`).join('');
+}
+function drillFluent(){
+  const tried = DECK.filter(c => D.sys[c.id].hits + D.sys[c.id].misses >= 3);
+  if (tried.length < 52) return false;
+  const hits = tried.reduce((a,c)=>a+D.sys[c.id].hits,0);
+  const tot  = tried.reduce((a,c)=>a+D.sys[c.id].hits+D.sys[c.id].misses,0);
+  const avg  = tried.reduce((a,c)=>a+(avgMs(c)||9e9),0)/tried.length;
+  return hits/tot >= 0.9 && avg < 2000;
+}
+function drillFluentTxt(){
+  const tried = DECK.filter(c => D.sys[c.id].hits + D.sys[c.id].misses >= 3);
+  if (!tried.length) return 'no drilling yet';
+  const avg = tried.reduce((a,c)=>a+(avgMs(c)||0),0)/tried.length;
+  return `${tried.length} of 52 cards drilled 3+ times, avg ${(avg/1000).toFixed(1)}s`;
+}
+
+/* ============================ data ============================ */
+$('#expBtn').onclick = () => $('#dataBox').value = JSON.stringify(D);
+$('#impBtn').onclick = () => {
+  try { const d = JSON.parse($('#dataBox').value); localStorage.setItem(KEY, JSON.stringify(d));
+        D = load(); renderSystem(); renderLoci(); alert('Loaded.'); }
+  catch(e){ alert('That is not valid JSON.'); }
+};
+$('#wipeBtn').onclick = () => {
+  if (!confirm('Erase your system, palace and all run history? This cannot be undone.')) return;
+  localStorage.removeItem(KEY); D = blank(); renderSystem(); renderLoci(); renderProgress();
+};
+
+/* ============================ init ============================ */
+renderSystem(); renderLoci(); show('system');
+</script>
+</body>
+</html>
