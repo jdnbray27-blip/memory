@@ -128,6 +128,42 @@
   Add an <b>action</b> for each later; you only need actions once you start pairing two cards per locus.</p>
 
   <div class="card">
+    <div class="row" style="justify-content:space-between;cursor:pointer" id="keyToggle">
+      <h3 style="margin:0;font-size:15px">How the two letters are worked out <span class="muted" style="font-weight:400">(the Dominic System)</span></h3>
+      <button class="btn" id="keyBtn">Show</button>
+    </div>
+    <div id="keyBody" style="display:none;margin-top:14px">
+      <p class="muted" style="margin:0 0 10px">Suit gives the second letter, always the obvious one:
+      Spades&nbsp;=&nbsp;S, Hearts&nbsp;=&nbsp;H, Diamonds&nbsp;=&nbsp;D, Clubs&nbsp;=&nbsp;C.</p>
+      <p class="muted" style="margin:0 0 10px">Rank gives the first letter. A, J, Q, K use themselves since
+      they are already letters. 2&ndash;5 and 8 just use their position in the alphabet (2nd letter is B,
+      and so on). 6, 7, 9 and 10 don&rsquo;t have a natural letter, so they&rsquo;re fixed by convention,
+      mostly by how the number sounds &mdash; these four are the only ones worth memorising on purpose:</p>
+      <table style="margin-bottom:10px">
+        <thead><tr><th>Rank</th><th>Letter</th><th>Why</th></tr></thead>
+        <tbody>
+          <tr><td class="c">A</td><td class="i">A</td><td>Ace</td></tr>
+          <tr><td class="c">2</td><td class="i">B</td><td>2nd letter of the alphabet</td></tr>
+          <tr><td class="c">3</td><td class="i">C</td><td>3rd letter</td></tr>
+          <tr><td class="c">4</td><td class="i">D</td><td>4th letter</td></tr>
+          <tr><td class="c">5</td><td class="i">E</td><td>5th letter</td></tr>
+          <tr><td class="c">6</td><td class="i">S</td><td>sounds like &ldquo;Six&rdquo;</td></tr>
+          <tr><td class="c">7</td><td class="i">G</td><td>shape of a flipped 7, standard convention</td></tr>
+          <tr><td class="c">8</td><td class="i">H</td><td>8th letter</td></tr>
+          <tr><td class="c">9</td><td class="i">N</td><td>sounds like &ldquo;Nine&rdquo;</td></tr>
+          <tr><td class="c">10</td><td class="i">O</td><td>the 0 in 10, like &ldquo;nOught&rdquo;</td></tr>
+          <tr><td class="c">J</td><td class="i">J</td><td>Jack</td></tr>
+          <tr><td class="c">Q</td><td class="i">Q</td><td>Queen</td></tr>
+          <tr><td class="c">K</td><td class="i">K</td><td>King</td></tr>
+        </tbody>
+      </table>
+      <p class="muted" style="margin:0">Put together: 4&hearts; = D + H = &ldquo;DH&rdquo;, so pick a real
+      person with those initials &mdash; David Hasselhoff is the usual one. 6&spades; = S + S, Sylvester
+      Stallone. The Init column below is this lookup already done for every card.</p>
+    </div>
+  </div>
+
+  <div class="card">
     <div class="row">
       <div style="flex:1;min-width:220px">
         <div class="muted">People filled in</div>
@@ -380,6 +416,11 @@ function refreshFill(){
   $('#fillTxt').textContent = `${n} of 52`;
   $('#hdrstat').textContent = `${n}/52 system \u00b7 ${D.loci.length} loci`;
 }
+$('#keyToggle').onclick = () => {
+  const open = $('#keyBody').style.display !== 'none';
+  $('#keyBody').style.display = open ? 'none' : 'block';
+  $('#keyBtn').textContent = open ? 'Show' : 'Hide';
+};
 $('#suggest').onclick = () => {
   if (!confirm('Put the initials in as a placeholder for every blank person? You can overwrite them any time.')) return;
   DECK.forEach(c => { if (!D.sys[c.id].person.trim()) D.sys[c.id].person = c.init + ' \u2014 ?'; });
